@@ -9,9 +9,8 @@ aproxy() {
 	usage() {
 		printf "$cmd -- Android Proxy Manager\n"
 		printf "%-28s %s\n" "-a, --address" "proxy's address ipv4:port"
-		printf "%-28s %s\n" "-p, --port" "displays this message"
+		printf "%-28s %s\n" "-s, --serial" "adb serial"
 		printf "%-28s %s\n" "-e|-d, --enable|--disable" "enable or disable the proxy"
-		printf "%-28s %s\n" "-s, --serial|--disable" "adb serial"
 	}
 
 	local getopt_error=$(mktemp /dev/shm/XXXXXX)
@@ -62,7 +61,7 @@ aproxy() {
 
 		*)
 			if [[ $1 != "--" ]]; then
-				printf "%s: invalid argument $1\n" "$cmd"
+				printf "$cmd: invalid argument $1\n"
 			fi
 			shift
 			;;
@@ -71,13 +70,13 @@ aproxy() {
 
 	if [[ -n $action ]]; then
 		if [[ -z "$addr" ]]; then
-			printf "%s: address is required\n" "$cmd"
+			printf "$cmd: address is required\n"
 			unset usage && return
 		fi
 
 		local ipv4_re="^([0-9]{1,3}\.){3}[0-9]{1,3}\:[0-9]{1,5}$"
 		if [[ ! "$addr" =~ $ipv4_re ]]; then
-			printf "%s: invalid proxy address\n" "$cmd"
+			printf "$cmd: invalid proxy address\n"
 			unset usage && return
 		fi
 	fi
