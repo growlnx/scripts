@@ -4,7 +4,7 @@ My personal script collection
 
 ## helper
 
-Utility commands to speed up daily activies.
+Utility commands to speed up daily activities.
 
 It can be sourced:
 ```
@@ -15,7 +15,7 @@ $ aproxy --transparent --enable --address 192.168.1.2:8080
 Or used as a regular bash script
 
 ```
-$ ./helper.sh aproxy --transparent --enable -address 192.168.1.2:8080
+$ ./helper.sh aproxy --transparent --enable --address 192.168.1.2:8080
 ```
 
 ### AProxy
@@ -60,6 +60,42 @@ Downloading the 2 most recent screenshots:
 
 ```
 $ ascr -d 2
+```
+
+See --help for more details.
+
+### AFrida
+
+AFrida manages the Frida server on a connected Android device.
+
+Installing the server:
+
+```
+$ afrida -i ./frida-server
+```
+
+Starting on localhost (default):
+
+```
+$ afrida -l 27042
+```
+
+Starting exposed to the network:
+
+```
+$ afrida -e -l 27042
+```
+
+Killing the server:
+
+```
+$ afrida -k
+```
+
+Removing the server from the device:
+
+```
+$ afrida -r
 ```
 
 See --help for more details.
