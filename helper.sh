@@ -197,8 +197,8 @@ afrida() {
 		printf "$cmd -- Android Frida Manager\n"
 		printf "%-28s ADB serial\n" "-s, --serial"
 		printf "%-28s Install the frida server\n" "-i, --install FILE"
-		printf "%-28s Uninstall the frida server\n" "-u, --uninstall"
-		printf "%-28s Starts the frida server\n" "-s, --start port"
+		printf "%-28s remove the frida server\n" "-r, --remove"
+		printf "%-28s Starts the frida server\n" "-l, --listen port"
 		printf "%-28s Exposes the frida server\n" "-e, --expose"
 		printf "%-28s Kills the frida server\n" "-k, --kill"
 		printf "%-28s Displays this message\n\n" "-h, --help"
@@ -206,7 +206,7 @@ afrida() {
 
 	local getopt_error=$(mktemp /dev/shm/XXXXXX)
 	local args
-	if ! args=$(getopt -n $cmd -o eui:khs: --long install:,uinstall,start:,expose,kill,help -- "$@" 2>"$getopt_error"); then
+	if ! args=$(getopt -n $cmd -o erl:i:khs: --long serial:,install:,remove,listen:,expose,kill,help -- "$@" 2>"$getopt_error"); then
 		cat "$getopt_error"
 		usage
 		unset usage && return
@@ -230,12 +230,12 @@ afrida() {
 			shift 2
 			;;
 
-		-u | --uninstall)
-			local mode="uninstall"
+		-r | --remove)
+			local mode="remove"
 			shift 1
 			;;
 
-		-s | --start)
+		-l | --listen)
 			local mode="start"
 			local frida_port="$2"
 			shift 2
@@ -277,7 +277,7 @@ afrida() {
 		adb $serial push "$frida_server" "$tmp/frida-server"
 		adb $serial shell "chmod u+x $tmp/frida-server"
 		;;
-	uninstall)
+	remove)
 		adb $serial shell "rm -f $tmp/frida-server"
 		;;
 
