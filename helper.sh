@@ -8,14 +8,16 @@ aproxy() {
 
 	usage() {
 		printf "$cmd -- Android Proxy Manager\n"
-		printf "%-28s %s\n" "-a, --address" "proxy's address ipv4:port"
-		printf "%-28s %s\n" "-s, --serial" "adb serial"
-		printf "%-28s %s\n" "-e|-d, --enable|--disable" "enable or disable the proxy"
+		printf "%-28s Proxy's address ipv4:port\n" "-a, --address"
+		printf "%-28s ADB serial\n" "-s, --serial"
+		printf "%-28s Transparent proxy via Android's iptables\n" "-t, --transparent"
+		printf "%-28s Enable or disable the proxy\n" "-e|-d, --enable|--disable"
+		printf "%-28s Displays this message\n\n" "-h, --help"
 	}
 
 	local getopt_error=$(mktemp /dev/shm/XXXXXX)
 	local args
-	if ! args=$(getopt -n $cmd -o edtha:,s: --long enable,disable,address:,serial: -- "$@" 2>"$getopt_error"); then
+	if ! args=$(getopt -n $cmd -o edtha:s: --long enable,disable,transparent:,address:,serial: -- "$@" 2>"$getopt_error"); then
 		cat "$getopt_error"
 		usage
 		unset usage && return
@@ -61,7 +63,7 @@ aproxy() {
 
 		*)
 			if [[ $1 != "--" ]]; then
-				printf "$cmd: invalid argument $1\n"
+				printf "$cmd: invalid argument %s\n" "$1"
 			fi
 			shift
 			;;
@@ -84,11 +86,11 @@ aproxy() {
 	if [[ -n $trans ]]; then
 		case $action in
 		enable)
-			adb $serial shell su -c "iptables -t nat -A OUTPUT -p tcp -m multiport --dport 80,443 -j DNAT --to-destination $addr"
+			adb $serial shell su -c "iptables -t nat -A OUTPUT -p tcp -m multiport --dports 80,443 -j DNAT --to-destination $addr"
 			;;
 
 		disable)
-			adb $serial shell su -c "iptables -t nat -D OUTPUT -p tcp -m multiport --dport 80,443 -j DNAT --to-destination $addr"
+			adb $serial shell su -c "iptables -t nat -D OUTPUT -p tcp -m multiport --dports 80,443 -j DNAT --to-destination $addr"
 			;;
 
 		*)
@@ -116,6 +118,82 @@ aproxy() {
 	esac
 }
 
+ascr() {
+	local cmd="${FUNCNAME[0]}"
+
+	usage() {
+		printf "$cmd -- Android Screenshot Manager\n"
+		printf "%-28s ADB serial\n" "-s, --serial"
+		printf "%-28s Captures a new screenshot\n" "-c, --capture"
+		printf "%-28s Downloads N screenshots\n" "-d, --download N"
+		printf "%-28s Displays this message\n\n" "-h, --help"
+	}
+
+	local getopt_error=$(mktemp /dev/shm/XXXXXX)
+	local args
+	if ! args=$(getopt -n $cmd -o hcd: --long capture,download:,serial: -- "$@" 2>"$getopt_error"); then
+		cat "$getopt_error"
+		usage
+		unset usage && return
+	fi
+
+	rm -f "$getopt_error"
+
+	eval set -- "$args"
+
+	local serial
+	local n="1"
+	while [[ $# -gt 0 ]]; do
+		case "$1" in
+		-c | --capture)
+			local mode="capture"
+			shift 1
+			;;
+
+		-d | --download)
+			local mode="download"
+			local n=$2
+			shift 2
+			;;
+
+		-s | --serial)
+			serial="-s $2"
+			shift 2
+			;;
+
+		-h | --help)
+			usage
+			unset usage && return
+			;;
+
+		*)
+			if [[ $1 != "--" ]]; then
+				printf "$cmd: invalid argument %s\n" "$1"
+			fi
+			shift
+			;;
+		esac
+	done
+
+	case $mode in
+	capture)
+		adb $serial exec-out "screencap -p" >"screen_$(date +%Y%m%d_%H%M%S).png"
+		;;
+
+	download)
+		local path="/sdcard/Pictures/Screenshots"
+		adb $serial shell "ls -t $path | head -n $n" | xargs -I{} adb $serial pull "$path/{}"
+		;;
+	esac
+}
+
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+	if [[ $# -eq 0 || $1 =~ ^-h$|^--help$ ]]; then
+		declare -F | awk '{print $3}' | while read -r fn; do
+			"$fn" -h 2>/dev/null
+		done
+		exit
+	fi
+
 	"$@" || exit
 fi
